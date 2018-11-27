@@ -36,15 +36,15 @@ tail_color = 'orange'
 mid_color = 'blue'
 
 # Regenerate readings even if they already exist?
-regenerate_readings = True
+regenerate_readings = False
 
 # Add color to the expression to indicate accent? (Default: False)
 #(note: requires modify_expressions to be True)
 global colorize 
-colorize = True
+colorize = False
 
 # Replace expressions with citation forms of relevant terms (Default: False)
-modify_expressions = True
+modify_expressions = False
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
 
@@ -291,11 +291,11 @@ def soup_maker(text):
     
 def add_color(word, pron):
     """return HTML-encoded string c_word consisting of the given string word, + color"""
-    non_mora_zi = r'[ぁぃぅぉゃゅょァィゥェォャュョ]'
+    non_mora_zi = ur'[ぁぃぅぉゃゅょァィゥェォャュョ]'
     raw_pron = soup_maker(pron)
     if "ꜜ" in raw_pron:
         #then it has an accent (i.e. a downstep symbol)
-        if len(re.sub(non_mora_zi, r'',raw_pron.split("ꜜ")[0])) == 1:
+        if len(re.sub(non_mora_zi, r'',raw_pron).split("ꜜ")[0]) == 1:
             #then it's 頭高型 or single-mora
             c_word = '<font color="' + head_color + '">' + word + '</font>'
         elif len(raw_pron) != len(raw_pron.rstrip("ꜜ")):
