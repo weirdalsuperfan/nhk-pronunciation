@@ -2,7 +2,7 @@
 Anki2 Add-On to look-up the pronunciation of Japanese expressions.
 
 2.0 version updated to add support for parsing fields containing multiple/conjugated words, 
-whether they are inside sentences/fragments or separated by punctuation/symbols, etc. Also adds optional expression field auto-correction to 原形 (citation/dictionary form); accent-dependent colorization to automate [this process](https://www.youtube.com/watch?v=cy7GvwI7uV8&t=4m10s); and bug fixes. See commits for full details.
+whether they are inside sentences/fragments or separated by punctuation/symbols, etc. Also adds optional expression field auto-correction to 原形 (citation/dictionary form); accent-dependent colorization to automate [this process](https://www.youtube.com/watch?v=cy7GvwI7uV8&t=4m10s), automatically adding audio files to your cards; and bug fixes. See commits for full details.
 
 
 Installation:
