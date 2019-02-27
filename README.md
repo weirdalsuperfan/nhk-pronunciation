@@ -26,9 +26,9 @@ colorFields = ['name of the field you want to add color to']
 
 If you don't want to automatically have color added to words, set colorFields = [] or colorFields = ['']
 
-color_sentence = True #default
+color_sentence = False #default
 
-Set color_sentence = True if colorFields (above) often contains a sentence...otherwise set to False (sentences will usually be automatically detected). Specifically, set to True if you want colorFields to not be overwritten, but merely to be colorized to the extent possible without changing its contents. Normally a word in a sentence will only be colorized if it is in citation form. This is to prevent confusion about the accent. The accent color here always indicates the accent of the dictionary/citation form of the word.
+Set color_sentence = True if colorFields (above) often contains a sentence...otherwise set to False (sentences will usually be automatically detected). Specifically, set to True if you want colorFields to not be overwritten, but merely to be colorized to the extent possible without changing its contents. Normally a word in a sentence will only be colorized if it is in citation form. This is to prevent confusion about the accent. The accent color here always indicates the accent of the dictionary/citation form of the word. There is currently no support for simultaneously coloring the an expression field and a sentence field. I'm working on adding that, but let me know if you want that I or might not bother.
 
 unaccented_color = 'green'
 
