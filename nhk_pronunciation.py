@@ -36,9 +36,9 @@ styles = {'class="overline"': 'style="text-decoration:overline;"',
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
 srcFields = ['Expression']    
 dstFields = ['Pronunciation']
-sndFields = ['Audio']
-colorFields = ['Sentence']
-color_sentence = True #set to True if colorFields often contains a sentence...otherwise don't
+sndFields = ['']
+colorFields = ['']
+color_sentence = False #set to True if colorFields often contains a sentence...otherwise don't
 unaccented_color = 'green'
 head_color = 'red'
 tail_color = 'orange'
@@ -706,7 +706,7 @@ def add_pronunciation_once(fields, model, data, n):
     # Only add the pronunciation if there's not already one in the pronunciation field
     if not fields[dst]:
         fields[src], fields[dst], new_color_field, audio = multi_lookup(fields[src], getPronunciations, colorTxt = color_src)
-        fields[snd] = add_audio(audio)
+        if snd: fields[snd] = add_audio(audio)
         if color:
             fields[color] = new_color_field
         
@@ -744,7 +744,7 @@ def add_pronunciation_focusLost(flag, n, fidx):
     # update field
     try:
         n[src], n[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
-        n[snd] = add_audio(audio)
+        if snd: n[snd] = add_audio(audio)
         if color:
             n[color] = new_color_field
     except Exception, e:
@@ -776,7 +776,7 @@ def regeneratePronunciations(nids):
         color_src = mw.col.media.strip(note[color]) if color else ''
         
         note[src], note[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
-        note[snd] = add_audio(audio)
+        if snd: note[snd] = add_audio(audio)
         if color:
             note[color] = new_color_field
         note.flush()
