@@ -28,7 +28,7 @@ If you don't want to automatically have color added to words, set colorFields = 
 
 color_sentence = False #default
 
-Set color_sentence = True if colorFields (above) often contains a sentence...otherwise set to False (sentences will usually be automatically detected). Specifically, set to True if you want colorFields to not be overwritten, but merely to be colorized to the extent possible without changing its contents. Normally a word in a sentence will only be colorized if it is in citation form. This is to prevent confusion about the accent. The accent color here always indicates the accent of the dictionary/citation form of the word. There is currently no support for simultaneously coloring the an expression field and a sentence field. I'm working on adding that, but let me know if you want that I or might not bother.
+Set color_sentence = True if colorFields (above) often contains a sentence...otherwise set to False (sentences will usually be automatically detected). Specifically, set to True if you want colorFields to not be overwritten, but merely to be colorized to the extent possible without changing its contents. Normally a word in a sentence will only be colorized if it is in citation form. This is to prevent confusion about the accent. The accent color here always indicates the accent of the dictionary/citation form of the word. There is currently no support for simultaneously coloring the an expression field and a sentence field. I'm working on adding that, but let me know if you want that or I might not bother. If color_sentence = False and the colorField is automatically determined not to be part of a sentence, if modify_expressions = True it will be changed into citation form and colored fully.
 
 unaccented_color = 'green'
 
@@ -42,7 +42,7 @@ Change the above variables to affect the colors assigned to 平板型、頭高�
 
 modify_expressions = False #if colorFields is empty, changes the srcField; otherwise changes the colorField
 
-Replace expression and/or colorFields with citation forms of relevant terms as appropriate (Default: False)
+modify_expressions allows you to automatically replace expression and/or colorFields with citation forms of relevant terms as appropriate (Default: False). This is useful if for some reason your cards show the wrong form of a word.
 
 Further down you'll find these variables:
 
