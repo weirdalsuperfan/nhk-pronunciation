@@ -4,14 +4,20 @@ from collections import namedtuple, OrderedDict
 import re
 import codecs
 import os
+from os import listdir
+from os.path import isfile, join
 import cPickle
 import time
 from string import punctuation
 from bs4 import BeautifulSoup
+from shutil import copy
+
 
 from aqt import mw
 from aqt.qt import *
 from aqt.utils import showText
+
+import japanese
 
 import sys, platform, subprocess, aqt.utils
 from anki.utils import stripHTML, isWin, isMac
@@ -30,23 +36,30 @@ styles = {'class="overline"': 'style="text-decoration:overline;"',
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
 srcFields = ['Expression']    
 dstFields = ['Pronunciation']
+sndFields = ['Audio']
+colorFields = ['Sentence']
+color_sentence = True #set to True if colorFields often contains a sentence...otherwise don't
 unaccented_color = 'green'
 head_color = 'red'
 tail_color = 'orange'
 mid_color = 'blue'
 
-# Regenerate readings even if they already exist?
-regenerate_readings = False
+# Replace expression and/or colorFields with citation forms of relevant terms as appropriate (Default: False)
+modify_expressions = False #if colorFields is empty, changes the srcField; otherwise changes the colorField
 
-# Add color to the expression to indicate accent? (Default: False)
-#(note: requires modify_expressions to be True)
-global colorize 
-colorize = False
-
-# Replace expressions with citation forms of relevant terms (Default: False)
-modify_expressions = False
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
+
+# Regenerate readings even if they already exist?
+regenerate_readings = True
+
+# Add color to the src to indicate accent? (Default: False)
+#(note: requires modify_expressions to be True)
+#global colorize 
+#colorize = True
+
+global add_sound
+add_sound = True
 
 # Use hiragana instead of katakana for readings?
 pronunciation_hiragana = False
@@ -60,7 +73,17 @@ thisfile = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.py")
 derivative_database = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.csv")
 derivative_pickle = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.pickle")
 accent_database = os.path.join(mw.pm.addonFolder(), "ACCDB_unicode.csv")
-
+soundFolder = u'D:/Dropbox (Personal)/Japan/Pronunciation/NHKOjadAccentsJson/NHKAccentMedia/audio'
+#soundFolder = "../../../../../Documents/testing123"
+soundDict = {}
+media_folder = "../../User 1/collection.media"
+if add_sound:
+    soundFiles = [f for f in listdir(soundFolder)]# if isfile(join(soundFolder, f))]
+    for sound in soundFiles:
+        if '.yomi' in sound:
+            soundDict[sound.split('.')[0]] = sound
+    #soundDict = {sound.split('.')[0]: sound for sound in soundFiles if '.yomi' in sound}
+    
 # "Class" declaration
 AccentEntry = namedtuple('AccentEntry', ['NID','ID','WAVname','K_FLD','ACT','midashigo','nhk','kanjiexpr','NHKexpr','numberchars','nopronouncepos','nasalsoundpos','majiri','kaisi','KWAV','midashigo1','akusentosuu','bunshou','ac'])
 
@@ -83,7 +106,7 @@ conj = ['お','ご','御','て','いる','ない','た','ば','ます','ん',
 'です','だ','たり','える','うる','ある','そう','がる','たい','する','じゃ','う',
 'させる','られる','せる','れる','ぬ']
 
-particles_etc = ['は','が','も','し','を','に','と','さ','へ','まで','もう','まだ',
+particles_etc = ['は','が','も','し','を','に','と','さ','へ','まで','もう','まだ', 'で',
 'ながら','より','よう','みたい','らしい','こと','の','もの','みる','わけ','よ','ね','か','わ','ぞ','ぜ']
 
 j_symb = '・、※【】「」〒◎×〃゜『』《》〜〽。〄〇〈〉〓〔〕〖〗〘 〙〚〛〝 〞〟〠〡〢〣〥〦〧〨〫  〬  〭  〮〯〶〷〸〹〺〻〼〾〿'
@@ -128,6 +151,7 @@ def mungeForPlatform(popen):
         popen[0] += ".lin"
     return popen
 
+
 class MecabController(object):
 
     def __init__(self):
@@ -170,6 +194,8 @@ def test_cases():
     """
     List of things tested with via anki
     
+    A 頭高型 word with 小さい文字 in the first mora 重要
+    A word that normally starts with お・御 おみおつけ (御御御付けなどは not in the dictionary)
     something with 々 and kana after it 着々と
     easy sentence 庭には二羽鶏がいる
     sentence with words that can't be looked up
@@ -218,10 +244,12 @@ def katakana_to_hiragana(to_translate):
     katakana = [ord(char) for char in katakana]
     translate_table = dict(zip(katakana, hiragana))
     return to_translate.translate(translate_table)
-
+      
+      
 def nix_punctuation(text):
     return ''.join(char for char in text if char not in punctuation)
 
+    
 def multi_lookup_helper(srcTxt_all, lookup_func):
     """
     Gets the pronunciation (or another type of dictionary lookup)
@@ -231,6 +259,7 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
     param function lookup_func dictionary lookup function to send elements of srcTxt_all to
     """
     prons = []
+    sounds = [] #search for all but just choose the first in the end
     #return True if all succeeded; good for skipping mecab (avoiding possibly oversplitting)
     all_hit = False
     count = 0
@@ -248,13 +277,22 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
         if not new_prons: new_prons = lookup_func(replace_dup(src))
         if new_prons:
             #choose only the first prons when assigning color to the word
-            if colorize and isinstance(new_prons,list): colorized_words.append(add_color(src, new_prons[0]))
+            if isinstance(new_prons,list): colorized_words.append(add_color(src, new_prons[0]))
             #It can be either a list or a string, I guess
             prons.extend(new_prons) if isinstance(new_prons,list) else prons.append(new_prons)
             #prons.extend(new_prons)#I guess this separates the string into characters if it's 1 string
+            
+            try:
+                for sound in soundFiles:
+                    if '.yomi' in sound:
+                        #raise Exception(sound.split('.')[0])
+                        if sound.split('.')[0] == src:
+                            sounds.append(sound)
+            except Warning:
+                raise Exception(sound.split('.')[0])
             return True
         #else just add the blank word, so you don't lose words
-        if colorize: colorized_words.append(src)
+        colorized_words.append(src)
         return False
     
     if srcTxt_all:
@@ -265,7 +303,8 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
     
     if srcTxt_all and count == len(srcTxt_all): all_hit = True
     
-    return colorized_words, prons, all_hit
+    return colorized_words, sounds, prons, all_hit
+
 
 def japanese_splitter(src):
     """Helper function for multi_lookup(src, lookup_func)
@@ -282,6 +321,7 @@ def japanese_splitter(src):
     
     return srcTxt_all
 
+
 def soup_maker(text):
     """para string text some text possibly formatted with HTML
     returns string src , the plaintext parsed from Beautiful soup"""
@@ -289,6 +329,7 @@ def soup_maker(text):
     src = soup.get_text()
     return src
     
+
 def add_color(word, pron):
     """return HTML-encoded string c_word consisting of the given string word, + color"""
     non_mora_zi = ur'[ぁぃぅぉゃゅょァィゥェォャュョ]'
@@ -310,6 +351,7 @@ def add_color(word, pron):
     
     return c_word
 
+
 def reading_parser(raw_reading):
     """takes a string (possibly with multiple words)
     consisting of a mecab parse (separated by spaces) and returns just the base word
@@ -320,28 +362,24 @@ def reading_parser(raw_reading):
     only_japanese = [re.sub(jp_regex, '', a) for a in base]
     
     return only_japanese
-        
-def multi_lookup(src, lookup_func, separator = "  ***  "):
+    
+    
+def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     """Has 3 functions: 1) If multiple words are separated by a ・ (Japanese slash)
     or other punctuation, gets the pronunciation for each word. 
     2) Parses words with Mecab if a simple split doesn't work
     3) adds color to the original expression and/or replaces it with citation forms"""
     do_colorize = False
     is_sentence = False # set to True if probably a sentence, to avoid modifying it
-    if colorize:
-        if not modify_expressions:
-            raise Exception("Please set modify_expressions to True for auto-colorize to work")
-        else: do_colorize = True
+    #if colorFields:
+    #    if not modify_expressions:
+    #        raise Exception("Please set modify_expressions to True for auto-colorize to work")
+    #    else: do_colorize = True
 
     prons, colorized_words, srcTxt_all = [], [], []
     srcTxt_all = japanese_splitter(src)
 
-    colorized_words, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
-    
-    #if you couldn't split the words perfectly with a simple split, use mecab
-    #or just use it anyway
-    #if not all_hit:
-    if len(srcTxt_all) == 1 and not prons: is_sentence = True
+    #__, _, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
     
     #iterate through and replace 々 with the kanji preceding it
     new_src = src
@@ -355,7 +393,12 @@ def multi_lookup(src, lookup_func, separator = "  ***  "):
     srcTxt_2 = reading_parser(reader.reading(soup_maker(new_src)))
     srcTxt_all.extend([term for term in srcTxt_2 if term not in srcTxt_all])
     
-    colorized_words, prons, _ = multi_lookup_helper(srcTxt_all, lookup_func)
+    colorized_words, sounds, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
+    
+    #if you couldn't split the words perfectly with a simple split, use mecab
+    #or just use it anyway
+    if not all_hit: is_sentence = True
+    #if len(srcTxt_all) == 1 and not prons: is_sentence = True
     
     #removed duplicates while preserving order 
     #(can be caused by sentences, multiple forms of the same word, etc)
@@ -368,21 +411,29 @@ def multi_lookup(src, lookup_func, separator = "  ***  "):
     
     #determine what/how to return/replace expressions based on the set config 
     delim = modification_delimiter if modify_expressions else '・'
-    if do_colorize:
-        if is_sentence:
+    if colorFields:
+        if (is_sentence or color_sentence) and not modify_expressions:
             for word in colorized_words:
-                src = re.sub(soup_maker(word), word, src)
-            final_src = src
+                colorTxt = re.sub(soup_maker(word), word, colorTxt)
+            colorTxt = colorTxt
         else:
-            final_src = delim.join(colorized_words) if prons and colorized_words else src
+            #adds dictionary forms of words to field even if it was already colorized
+            if prons and colorized_words: colorTxt = delim.join(colorized_words) 
+    if colorFields == srcFields:
+        final_src = colorTxt
     else:
-        final_src = delim.join(srcTxt_all) if modify_expressions else src
-    
+        final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
+    final_color_src = colorTxt    
     
     #NOTE: colorized_words will only have the words that have prons, and
     #will have them in the form that was able to get a hit, i.e. citation/dictionary form
     
-    return final_src, fields_dest
+    if sounds:
+        final_snd = sounds[0]
+    else:
+        final_snd = ''
+    
+    return final_src, fields_dest, final_color_src, final_snd
 
 
 # ************************************************
@@ -601,6 +652,10 @@ def get_src_dst_fields(fields):
     srcIdx = None
     dst = None
     dstIdx = None
+    snd = None
+    sndIdx = None
+    color = None
+    colorIdx = None
 
     for i, f in enumerate(srcFields):
         if f in fields:
@@ -613,8 +668,27 @@ def get_src_dst_fields(fields):
             dst = f
             dstIdx = i
             break
+            
+    for i, f in enumerate(sndFields):
+        if f in fields:
+            snd = f
+            sndIdx = i
+            break
+            
+    for i, f in enumerate(colorFields):
+        if f in fields:
+            color = f
+            colorIdx = i
+            break
 
-    return src, srcIdx, dst, dstIdx
+    return src, srcIdx, dst, dstIdx, snd, sndIdx, color, colorIdx
+
+def add_audio(audio):
+    if add_sound and audio:
+        if not isfile(join(media_folder, audio)):
+            copy(soundFolder + os.sep + audio, media_folder + os.sep + audio)
+        return "[sound:" + audio + "]"
+
 
 def add_pronunciation_once(fields, model, data, n):
     """ When possible, temporarily set the pronunciation to a field """
@@ -622,15 +696,20 @@ def add_pronunciation_once(fields, model, data, n):
     #if "japanese" not in model['name'].lower():
     #    return fields
 
-    src, srcIdx, dst, dstIdx = get_src_dst_fields(fields)
+    src, srcIdx, dst, dstIdx, snd, sndIdx, color, colorIdx = get_src_dst_fields(fields)
 
     if not src or dst is None:
         return fields
-
+        
+    color_src = fields[color] if color else ''
+       
     # Only add the pronunciation if there's not already one in the pronunciation field
     if not fields[dst]:
-        fields[src], fields[dst] = multi_lookup(fields[src], getPronunciations)
-
+        fields[src], fields[dst], new_color_field, audio = multi_lookup(fields[src], getPronunciations, colorTxt = color_src)
+        fields[snd] = add_audio(audio)
+        if color:
+            fields[color] = new_color_field
+        
     return fields
 
 def add_pronunciation_focusLost(flag, n, fidx):
@@ -641,7 +720,7 @@ def add_pronunciation_focusLost(flag, n, fidx):
     from aqt import mw
     fields = mw.col.models.fieldNames(n.model())
 
-    src, srcIdx, dst, dstIdx = get_src_dst_fields(fields)
+    src, srcIdx, dst, dstIdx, snd, sndIdx, color, colorIdx = get_src_dst_fields(fields)
 
     if not src or not dst:
         return flag
@@ -658,10 +737,16 @@ def add_pronunciation_focusLost(flag, n, fidx):
     srcTxt = mw.col.media.strip(n[src])
     if not srcTxt:
         return flag
+        
+    # grab source text of field to be colorized
+    color_src = mw.col.media.strip(n[color]) if color else ''
 
     # update field
     try:
-        n[src], n[dst] = multi_lookup(srcTxt, getPronunciations)
+        n[src], n[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
+        n[snd] = add_audio(audio)
+        if color:
+            n[color] = new_color_field
     except Exception, e:
         raise
     return True
@@ -675,7 +760,7 @@ def regeneratePronunciations(nids):
         #if "japanese" not in note.model()['name'].lower():
         #    continue
 
-        src, srcIdx, dst, dstIdx = get_src_dst_fields(note)
+        src, srcIdx, dst, dstIdx, snd, sndIdx, color, colorIdx = get_src_dst_fields(note)
 
         if not src or dst is None:
             continue
@@ -688,8 +773,12 @@ def regeneratePronunciations(nids):
         if not srcTxt.strip():
             continue
         
-        note[src], note[dst] = multi_lookup(srcTxt, getPronunciations)
-
+        color_src = mw.col.media.strip(note[color]) if color else ''
+        
+        note[src], note[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
+        note[snd] = add_audio(audio)
+        if color:
+            note[color] = new_color_field
         note.flush()
     mw.progress.finish()
     mw.reset()
