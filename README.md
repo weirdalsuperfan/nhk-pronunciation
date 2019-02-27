@@ -6,10 +6,11 @@ whether they are inside sentences/fragments or separated by punctuation/symbols,
 
 
 Installation:
-1. Make sure you have the [NHK accent plugin](https://ankiweb.net/shared/info/932119536) installed already.
-2. Open your Anki addons folder by going to Tools -> Add-ons - Open Add-ons Folder in Anki.
-3. Copy the file nhk_pronunciation.py into your addons folder, overwriting the old nhk_pronunciation.py file.
-4. You need to copy the bs4 folder too if you don't have one. This dependency may by removed in the future, but for now you need it.
+1. Make sure you have the [Japanese Support Addon](https://ankiweb.net/shared/info/3918629684) installed already.
+2. Make sure you have the [NHK accent plugin](https://ankiweb.net/shared/info/932119536) installed already.
+3. Open your Anki addons folder by going to Tools -> Add-ons - Open Add-ons Folder in Anki.
+4. Copy the file nhk_pronunciation.py into your addons folder, overwriting the old nhk_pronunciation.py file.
+5. You need to copy the bs4 folder too if you don't have one. This dependency may by removed in the future, but for now you need it.
 
 Usage:
 Modify the following variables in the file to get different functionalities. Functionality was designed to be intuitive, but back up your files (and don't forget about the undo buttons) before adding in bulk. You can undo a bulk addition, but to be safe I recommend trying out different options with a single card at first. If you are confused, example default values can be found in the nhk_pronunciation.py file.
