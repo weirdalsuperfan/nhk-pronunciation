@@ -16,7 +16,7 @@ Installation:
 Usage:
 Modify the following variables in the file to get different functionalities. Functionality was designed to be intuitive, but back up your files (and don't forget about the undo buttons) before adding in bulk. You can undo a bulk addition, but to be safe I recommend trying out different options with a single card at first. If you are confused, example default values can be found in the nhk_pronunciation.py file.
 
-The recommended setup is to set srcFields = ['Expression'] and colorFields = ['Sentence'] with color_sentence = False and modify_expressions = False. 
+The recommended setup is to set srcFields = ['Expression'] and colorFields = ['Reading'] with color_sentence = True and modify_expressions = True and readings = True
 
 This plugin adds sound/color based on the first pronunciation, so if that is incorrect you will need to fix it manually when the card comes up - so pay attention during your initial reviews. You can use goldendict to get the correct sound file quickly (right click on the speaker icon in the NHK dictionary, and click save sound; then drag and drop the saved file in the sound field in your card).
 
@@ -36,6 +36,11 @@ color_sentence = False #default
 
 Set color_sentence = True if colorFields (above) often contains a sentence...otherwise set to False (sentences will usually be automatically detected). Specifically, set to True if you want colorFields to not be overwritten, but merely to be colorized to the extent possible without changing its contents. Normally a word in a sentence will only be colorized if it is in citation form. This is to prevent confusion about the accent. The accent color here always indicates the accent of the dictionary/citation form of the word. There is currently no support for simultaneously coloring the an expression field and a sentence field. I'm working on adding that, but let me know if you want that or I might not bother. If color_sentence = False and the colorField is automatically determined not to be part of a sentence, if modify_expressions = True it will be changed into citation form and colored fully.
 
+readings = False
+
+Set readings to True if you use brackets to indicate readings; otherwise brackets that break up words will cause those words to not be colored. NOTE: This will add readings to your color field if they don't exist
+
+
 unaccented_color = 'green'
 
 head_color = 'red'
@@ -46,9 +51,8 @@ mid_color = 'blue'
 
 Change the above variables to affect the colors assigned to 平板型、頭高型、尾高型、and 中高型、respectively.
 
-modify_expressions = False #if colorFields is empty, changes the srcField; otherwise changes the colorField
 
-modify_expressions allows you to automatically replace expression and/or colorFields with citation forms of relevant terms as appropriate (Default: False). This is useful if for some reason your cards show the wrong form of a word.
+modify_expressions = True # Replace expression with citation forms of relevant terms as appropriate (Default: False)
 
 Further down you'll find these variables:
 
