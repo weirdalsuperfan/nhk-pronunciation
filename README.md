@@ -18,6 +18,8 @@ Modify the following variables in the file to get different functionalities. Fun
 
 The recommended setup is to set srcFields = ['Expression'] and colorFields = ['Sentence'] with color_sentence = False and modify_expressions = False. 
 
+This plugin adds sound/color based on the first pronunciation, so if that is incorrect you will need to fix it manually when the card comes up - so pay attention during your initial reviews. You can use goldendict to get the correct sound file quickly (right click on the speaker icon in the NHK dictionary, and click save sound; then drag and drop the saved file in the sound field in your card).
+
 srcFields = ['name of the field you want to write the accent to dstFields of']    
 
 dstFields = ['name of the field where you want accent info from srcFields to go']
