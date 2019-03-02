@@ -5,7 +5,7 @@ import re
 import codecs
 import os
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 import cPickle
 import time
 from string import punctuation
@@ -18,6 +18,7 @@ from aqt.qt import *
 from aqt.utils import showText
 
 import japanese
+from japanese.reading import MecabController as jsupport_mecab
 
 import sys, platform, subprocess, aqt.utils
 from anki.utils import stripHTML, isWin, isMac
@@ -36,27 +37,25 @@ styles = {'class="overline"': 'style="text-decoration:overline;"',
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
 srcFields = ['Expression']    
 dstFields = ['Pronunciation']
-sndFields = ['']
-colorFields = ['']
+sndFields = ['Audio']
+colorFields = ['Expression']
 color_sentence = False #set to True if colorFields often contains a sentence...otherwise don't
+#set color_readings to True if you use brackets to indicate readings; 
+#otherwise brackets that break up words will cause those words to not be colored
+readings = False #if True, will also add/preserve readings to the colored field
 unaccented_color = 'green'
 head_color = 'red'
 tail_color = 'orange'
 mid_color = 'blue'
 
-# Replace expression and/or colorFields with citation forms of relevant terms as appropriate (Default: False)
-modify_expressions = False #if colorFields is empty, changes the srcField; otherwise changes the colorField
+# Replace expression with citation forms of relevant terms as appropriate (Default: False)
+modify_expressions = False
 
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
 
 # Regenerate readings even if they already exist?
 regenerate_readings = True
-
-# Add color to the src to indicate accent? (Default: False)
-#(note: requires modify_expressions to be True)
-#global colorize 
-#colorize = True
 
 global add_sound
 add_sound = True
@@ -74,10 +73,9 @@ derivative_database = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.csv")
 derivative_pickle = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.pickle")
 accent_database = os.path.join(mw.pm.addonFolder(), "ACCDB_unicode.csv")
 soundFolder = u'D:/Dropbox (Personal)/Japan/Pronunciation/NHKOjadAccentsJson/NHKAccentMedia/audio'
-#soundFolder = "../../../../../Documents/testing123"
 soundDict = {}
-media_folder = "../../User 1/collection.media"
-if add_sound:
+media_folder = os.pardir + os.sep + os.pardir + os.sep + "User 1" + os.sep + "collection.media"
+if add_sound and isdir(soundFolder):
     soundFiles = [f for f in listdir(soundFolder)]# if isfile(join(soundFolder, f))]
     for sound in soundFiles:
         if '.yomi' in sound:
@@ -277,7 +275,8 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
         if not new_prons: new_prons = lookup_func(replace_dup(src))
         if new_prons:
             #choose only the first prons when assigning color to the word
-            if isinstance(new_prons,list): colorized_words.append(add_color(src, new_prons[0]))
+            src_for_colorization = original_reader.reading(src) if readings else src
+            if isinstance(new_prons,list): colorized_words.append(add_color(src_for_colorization, new_prons[0]))
             #It can be either a list or a string, I guess
             prons.extend(new_prons) if isinstance(new_prons,list) else prons.append(new_prons)
             #prons.extend(new_prons)#I guess this separates the string into characters if it's 1 string
@@ -377,6 +376,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     #    else: do_colorize = True
 
     prons, colorized_words, srcTxt_all = [], [], []
+    src = re.sub(r"\s?([^[\]]*)\[[^[\]]*\]", r"\1", src) #for removing brackets that hurigana readings insert
     srcTxt_all = japanese_splitter(src)
 
     #__, _, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
@@ -411,20 +411,21 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     
     #determine what/how to return/replace expressions based on the set config 
     delim = modification_delimiter if modify_expressions else '・'
+    final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
     if colorFields:
-        if (is_sentence or color_sentence) and not modify_expressions:
+        if color_sentence:
+            #uncommenting the below ling avoids the 重なるhtml tags problem at the risk of deleting unrelated html
+            #colorTxt = soup_maker(colorTxt) 
             for word in colorized_words:
-                colorTxt = re.sub(soup_maker(word), word, colorTxt)
-            colorTxt = colorTxt
+                colorTxt = re.sub(re.escape(soup_maker(word)), word, colorTxt)
         else:
             #adds dictionary forms of words to field even if it was already colorized
             if prons and colorized_words: colorTxt = delim.join(colorized_words) 
     if colorFields == srcFields:
         final_src = colorTxt
-    else:
-        final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
+    #else:
+    #    final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
     final_color_src = colorTxt    
-    
     #NOTE: colorized_words will only have the words that have prons, and
     #will have them in the form that was able to get a hit, i.e. citation/dictionary form
     
@@ -688,7 +689,7 @@ def add_audio(audio):
         if not isfile(join(media_folder, audio)):
             copy(soundFolder + os.sep + audio, media_folder + os.sep + audio)
         return "[sound:" + audio + "]"
-
+    
 
 def add_pronunciation_once(fields, model, data, n):
     """ When possible, temporarily set the pronunciation to a field """
@@ -706,7 +707,7 @@ def add_pronunciation_once(fields, model, data, n):
     # Only add the pronunciation if there's not already one in the pronunciation field
     if not fields[dst]:
         fields[src], fields[dst], new_color_field, audio = multi_lookup(fields[src], getPronunciations, colorTxt = color_src)
-        if snd: fields[snd] = add_audio(audio)
+        if snd and audio: fields[snd] = add_audio(audio)
         if color:
             fields[color] = new_color_field
         
@@ -744,7 +745,7 @@ def add_pronunciation_focusLost(flag, n, fidx):
     # update field
     try:
         n[src], n[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
-        if snd: n[snd] = add_audio(audio)
+        if snd and audio: n[snd] = add_audio(audio)
         if color:
             n[color] = new_color_field
     except Exception, e:
@@ -776,7 +777,7 @@ def regeneratePronunciations(nids):
         color_src = mw.col.media.strip(note[color]) if color else ''
         
         note[src], note[dst], new_color_field, audio = multi_lookup(srcTxt, getPronunciations, colorTxt = color_src)
-        if snd: note[snd] = add_audio(audio)
+        if snd and audio: note[snd] = add_audio(audio)
         if color:
             note[color] = new_color_field
         note.flush()
@@ -825,3 +826,4 @@ addHook('editFocusLost', add_pronunciation_focusLost)
 addHook("browser.setupMenus", setupBrowserMenu)
 
 reader = MecabController()
+original_reader = jsupport_mecab()
