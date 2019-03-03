@@ -1,6 +1,8 @@
 # nhk-pronunciation
 Anki2 Add-On to look-up the pronunciation of Japanese expressions.
 
+Always back up your decks and test on a couple cards before bulk adding.
+
 2.0 version updated to add support for parsing fields containing multiple/conjugated words, 
 whether they are inside sentences/fragments or separated by punctuation/symbols, etc. Also adds optional expression field auto-correction to 原形 (citation/dictionary form); accent-dependent colorization to automate [this process](https://www.youtube.com/watch?v=cy7GvwI7uV8&t=4m10s), automatically adding audio files to your cards (note that the default colors are different from the video; see below for how to customize them); and bug fixes. See commits for full details.
 
@@ -12,6 +14,7 @@ Installation:
 3. Open your Anki addons folder by going to Tools -> Add-ons - Open Add-ons Folder in Anki.
 4. Copy the file nhk_pronunciation.py into your addons folder, overwriting the old nhk_pronunciation.py file.
 5. You need to copy the bs4 folder too if you don't have one. This dependency may by removed in the future, but for now you need it.
+6. Open Anki and go to addons -> nhk_pronunciation -> Edit and set the variables below to your liking.
 
 Usage:
 Modify the following variables in the file to get different functionalities. Functionality was designed to be intuitive, but back up your files (and don't forget about the undo buttons) before adding in bulk. You can undo a bulk addition, but to be safe I recommend trying out different options with a single card at first. If you are confused, example default values can be found in the nhk_pronunciation.py file.
