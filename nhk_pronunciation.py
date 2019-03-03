@@ -37,7 +37,7 @@ styles = {'class="overline"': 'style="text-decoration:overline;"',
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
 srcFields = ['Expression']    
 dstFields = ['Pronunciation']
-sndFields = ['']
+sndFields = ['Audio']
 colorFields = ['Reading']
 color_sentence = True #set to True if colorFields often contains a sentence...otherwise don't
 #set readings to True if you use brackets to indicate readings; 
@@ -49,13 +49,13 @@ tail_color = 'orange'
 mid_color = 'blue'
 
 # Replace expression with citation forms of relevant terms as appropriate (Default: False)
-modify_expressions = True
+modify_expressions = False
 
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
 
 # Regenerate pronunciations even if they already exist?
-regenerate_prons = False
+regenerate_prons = True
 
 global add_sound
 add_sound = True #set to true if you want to add audio to your cards
@@ -413,7 +413,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     #determine what/how to return/replace expressions based on the set config 
     delim = modification_delimiter if modify_expressions else '・'
     final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
-    if colorFields:
+    if colorFields and colorTxt:
         if color_sentence:
             #uncommenting the below ling avoids the 重なるhtml tags problem at the risk of deleting unrelated html
             colorTxt = re.sub(re.escape('&nbsp;'),'', colorTxt)
