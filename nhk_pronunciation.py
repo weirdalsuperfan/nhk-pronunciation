@@ -37,28 +37,28 @@ styles = {'class="overline"': 'style="text-decoration:overline;"',
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
 srcFields = ['Expression']    
 dstFields = ['Pronunciation']
-sndFields = ['Audio']
-colorFields = ['Expression']
-color_sentence = False #set to True if colorFields often contains a sentence...otherwise don't
-#set color_readings to True if you use brackets to indicate readings; 
+sndFields = ['']
+colorFields = ['Reading']
+color_sentence = True #set to True if colorFields often contains a sentence...otherwise don't
+#set readings to True if you use brackets to indicate readings; 
 #otherwise brackets that break up words will cause those words to not be colored
-readings = False #if True, will also add/preserve readings to the colored field
+readings = True #if True, will preserve readings to the colored field. TURN OFF IF NOT COLORING A READINGS FIELD
 unaccented_color = 'green'
 head_color = 'red'
 tail_color = 'orange'
 mid_color = 'blue'
 
 # Replace expression with citation forms of relevant terms as appropriate (Default: False)
-modify_expressions = False
+modify_expressions = True
 
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
 
-# Regenerate readings even if they already exist?
-regenerate_readings = True
+# Regenerate pronunciations even if they already exist?
+regenerate_prons = False
 
 global add_sound
-add_sound = True
+add_sound = True #set to true if you want to add audio to your cards
 
 # Use hiragana instead of katakana for readings?
 pronunciation_hiragana = False
@@ -282,11 +282,12 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
             #prons.extend(new_prons)#I guess this separates the string into characters if it's 1 string
             
             try:
-                for sound in soundFiles:
-                    if '.yomi' in sound:
-                        #raise Exception(sound.split('.')[0])
-                        if sound.split('.')[0] == src:
-                            sounds.append(sound)
+                if soundFiles:
+                    for sound in soundFiles:
+                        if '.yomi' in sound:
+                            #raise Exception(sound.split('.')[0])
+                            if sound.split('.')[0] == src:
+                                sounds.append(sound)
             except Warning:
                 raise Exception(sound.split('.')[0])
             return True
@@ -415,9 +416,41 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     if colorFields:
         if color_sentence:
             #uncommenting the below ling avoids the 重なるhtml tags problem at the risk of deleting unrelated html
-            #colorTxt = soup_maker(colorTxt) 
+            colorTxt = re.sub(re.escape('&nbsp;'),'', colorTxt)
+            colorTxt = soup_maker(colorTxt) 
+            #stuff = [word for word in colorized_words] #for testing
+            #raise Exception(stuff) #for testing
+            #raise Exception(colorTxt)
+            count = 0
             for word in colorized_words:
-                colorTxt = re.sub(re.escape(soup_maker(word)), word, colorTxt)
+                #raise Exception(re.sub(r'([\>\]])\s','\g<1>',word))
+                #raise Exception(re.findall(r'\s?'+re.escape(soup_maker(word)), colorTxt))
+                #don't substitute if you're already inside a font color tag
+                indices_to_ignore = []
+                new_soup = BeautifulSoup(colorTxt, "html.parser", from_encoding='utf-8')
+                tags = [unicode(tag) for tag in new_soup.select("font")]
+                tag_lengths = [len(tag) for tag in tags]
+                #first remove all text with font tags from the string
+                for tag in tags:
+                    indices_to_ignore.extend([m.start() for m in re.finditer(re.escape(tag),colorTxt)])
+                    #temp = re.sub(re.escape(tag),'', colorTxt)
+                #then substitute the new colorized word into the shorter string
+                temp = ''
+                current_loc = 0
+                #if count > 0: raise Exception(indices_to_ignore)
+                for start, length, tag in zip(indices_to_ignore, tag_lengths, tags):
+                    #raise Exception(colorTxt[current_loc:start])
+                    #if re.findall(r'\s?'+re.escape(soup_maker(word)), colorTxt[current_loc:start]):
+                    #    if count > 0: raise Exception(colorTxt, re.findall(r'\s?'+re.escape(soup_maker(word)), colorTxt[current_loc:start]))
+                    temp += re.sub(r'\s?'+re.escape(soup_maker(word)), re.sub(r'([\>\]])\s','\g<1>',word), colorTxt[current_loc:start])
+                    temp += tag
+                    current_loc = start+length
+                temp += re.sub(r'\s?'+re.escape(soup_maker(word)), re.sub(r'([\>\]])\s','\g<1>',word), colorTxt[current_loc:])
+                colorTxt = temp
+                count += 1
+                #then add the older font-tagged-text back based on its original index
+                #colorTxt = re.sub(r'\s?'+re.escape(soup_maker(word)), re.sub(r'([\>\]])\s','\g<1>',word), colorTxt)
+                #sraise Exception(colorTxt)
         else:
             #adds dictionary forms of words to field even if it was already colorized
             if prons and colorized_words: colorTxt = delim.join(colorized_words) 
@@ -428,7 +461,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     final_color_src = colorTxt    
     #NOTE: colorized_words will only have the words that have prons, and
     #will have them in the form that was able to get a hit, i.e. citation/dictionary form
-    
+
     if sounds:
         final_snd = sounds[0]
     else:
@@ -766,7 +799,7 @@ def regeneratePronunciations(nids):
         if not src or dst is None:
             continue
 
-        if note[dst] and not regenerate_readings:
+        if note[dst] and not regenerate_prons:
             # already contains data, skip
             continue
 
