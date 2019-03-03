@@ -6,7 +6,7 @@ Always back up your decks and test on a couple cards before bulk adding.
 2.0 version updated to add support for parsing fields containing multiple/conjugated words, 
 whether they are inside sentences/fragments or separated by punctuation/symbols, etc. Also adds optional expression field auto-correction to 原形 (citation/dictionary form); accent-dependent colorization to automate [this process](https://www.youtube.com/watch?v=cy7GvwI7uV8&t=4m10s), automatically adding audio files to your cards (note that the default colors are different from the video; see below for how to customize them); and bug fixes. See commits for full details.
 
-Features that may be added in future releases include a new menu option to color all nontrivial words in a field based on accent, the ability to simultaneously color multiple fields based on the source expressions's accent, and an option to color words inside sentences even when they are conjugated (currently, to prevent confusion of accents, depending on your settings words are either changed to their citation form before coloring, or are not colored unless they are in citation form).
+Features that may be added in future releases include a new menu option to color all nontrivial words in a field based on accent (you can already do this; see below), the ability to simultaneously color multiple fields based on the source expressions's accent, and an option to color words inside sentences even when they are conjugated (currently, to prevent confusion of accents, depending on your settings words are either changed to their citation form before coloring, or are not colored unless they are in citation form).
 
 Installation:
 1. Make sure you have the [Japanese Support Addon](https://ankiweb.net/shared/info/3918629684) installed already.
@@ -36,6 +36,8 @@ regenerate_prons = False
 And the rest of the variables to your liking. (Recommended workflow: First bulk add Japanese support readings, and then bulk add pronunciation). You must set readings = False if the field you're adding color to doesn't include readings.
 
 This plugin adds sound/color based on the first pronunciation, so if that is incorrect you will need to fix it manually when the card comes up - so pay attention during your initial reviews. You can use goldendict to get the correct sound file quickly (right click on the speaker icon in the NHK dictionary, and click save sound; then drag and drop the saved file in the sound field in your card).
+
+How to add pronunciation for all words in a sentence: Set srcFields = ['Sentence'] (i.e. to a field that contains a sentence you want to color), and colorFields = ['Reading'] or colorFields = ['Sentence'] depending on what you want to color. Note that the Pronunciation field will be filled out with pronunciations for all words, so you'll need another field that specifies the focus word in order to remind yourself of what it is. 
 
 srcFields = ['name of the field you want to write the accent to dstFields of']    
 
