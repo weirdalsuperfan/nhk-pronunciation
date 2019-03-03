@@ -16,7 +16,7 @@ Installation:
 Usage:
 Modify the following variables in the file to get different functionalities. Functionality was designed to be intuitive, but back up your files (and don't forget about the undo buttons) before adding in bulk. You can undo a bulk addition, but to be safe I recommend trying out different options with a single card at first. If you are confused, example default values can be found in the nhk_pronunciation.py file.
 
-The recommended setup is to set srcFields = ['Expression'] and colorFields = ['Reading'] with color_sentence = True and modify_expressions = True and readings = True (Recommended workflow: First bulk add Japanese support readings, and then bulk add pronunciation).
+The recommended setup is to set srcFields = ['Expression'] and colorFields = ['Reading'] with color_sentence = True and modify_expressions = True and readings = True (Recommended workflow: First bulk add Japanese support readings, and then bulk add pronunciation). You must set readings = False if the field you're adding color to doesn't include readings.
 
 This plugin adds sound/color based on the first pronunciation, so if that is incorrect you will need to fix it manually when the card comes up - so pay attention during your initial reviews. You can use goldendict to get the correct sound file quickly (right click on the speaker icon in the NHK dictionary, and click save sound; then drag and drop the saved file in the sound field in your card).
 
@@ -40,7 +40,7 @@ Set color_sentence = True if colorFields (above) often contains a sentence...oth
 
 readings = False
 
-Set readings to True if you use brackets to indicate readings; otherwise brackets that break up words will cause those words to not be colored. NOTE: This will add readings to your color field if they don't exist
+Set readings to True if you use brackets to indicate readings; otherwise brackets that break up words will cause those words to not be colored. The Reading field must already be populated with text that contains readings inside brackets in order for this to work.
 
 
 unaccented_color = 'green'
