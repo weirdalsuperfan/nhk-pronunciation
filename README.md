@@ -1,5 +1,5 @@
 # nhk-pronunciation
-Anki2 Add-On to look-up the pronunciation of Japanese expressions.
+Anki2 Add-On to look-up the pronunciation of Japanese expressions. THIS VERSION ONLY WORKS WITH ANKI 2.0.
 
 Always back up your decks and test on a couple cards before bulk adding.
 
