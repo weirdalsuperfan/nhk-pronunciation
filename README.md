@@ -79,9 +79,9 @@ Further down you'll find these variables:
 
 soundFolder = u'path to the NHK sound files if you have them'
 
-media_folder = "../../User 1/collection.media"
+media_folder = media_folder = os.pardir + os.sep + os.pardir + os.sep + "User 1" + os.sep + "collection.media"
 
-This is your Anki media collection. You probably don't need to change the media_folder value, but if you do, just put the path here.
+This is your Anki media collection. You probably don't need to change the media_folder value, but if you do, just put the path here in quotes (e.g. "../../User 1/collection.media").
 
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
