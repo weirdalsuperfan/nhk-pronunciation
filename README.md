@@ -86,4 +86,4 @@ This is your Anki media collection. You probably don't need to change the media_
 #delimiter to use between each word in a corrected expression (Default: '・')
 modification_delimiter = '・' # only used if modify_expressions is True
 
-regenerate_prons = True # Regenerate readings even if they already exist?
+regenerate_prons = True # Regenerate pronunciations even if they already exist?
