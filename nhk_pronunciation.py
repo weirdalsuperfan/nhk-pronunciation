@@ -415,7 +415,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     delim = modification_delimiter if modify_expressions else '・'
     final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
     if colorFields and colorTxt:
-        if color_sentence:
+        if color_sentence or (is_sentence and colorFields == srcFields):
             #uncommenting the below ling avoids the 重なるhtml tags problem at the risk of deleting unrelated html
             colorTxt = re.sub(re.escape('&nbsp;'),'', colorTxt)
             colorTxt = soup_maker(colorTxt) 
