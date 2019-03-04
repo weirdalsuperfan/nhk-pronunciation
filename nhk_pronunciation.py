@@ -74,6 +74,7 @@ derivative_pickle = os.path.join(mw.pm.addonFolder(), "nhk_pronunciation.pickle"
 accent_database = os.path.join(mw.pm.addonFolder(), "ACCDB_unicode.csv")
 soundFolder = u'D:/Dropbox (Personal)/Japan/Pronunciation/NHKOjadAccentsJson/NHKAccentMedia/audio'
 soundDict = {}
+soundFiles = []
 media_folder = os.pardir + os.sep + os.pardir + os.sep + "User 1" + os.sep + "collection.media"
 if add_sound and isdir(soundFolder):
     soundFiles = [f for f in listdir(soundFolder)]# if isfile(join(soundFolder, f))]
@@ -427,7 +428,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
                 #raise Exception(re.findall(r'\s?'+re.escape(soup_maker(word)), colorTxt))
                 #don't substitute if you're already inside a font color tag
                 indices_to_ignore = []
-                new_soup = BeautifulSoup(colorTxt, "html.parser", from_encoding='utf-8')
+                new_soup = BeautifulSoup(colorTxt, "html.parser")
                 tags = [unicode(tag) for tag in new_soup.select("font")]
                 tag_lengths = [len(tag) for tag in tags]
                 #first remove all text with font tags from the string
