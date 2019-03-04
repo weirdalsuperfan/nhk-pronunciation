@@ -1,7 +1,7 @@
 # nhk-pronunciation
 Anki2 Add-On to look-up the pronunciation of Japanese expressions. THIS VERSION ONLY WORKS WITH ANKI 2.0.
 
-Always back up your decks and test on a couple cards before bulk adding.
+Always back up your decks and test on a couple cards before bulk adding. KNOWN BUG (will delete this message when it's fixed): losing focus (e.g. by clicking away) on the Expression field (srcFields) while both the Pronunciation field (dstFields) and the color field (colorFields) are empty seems to cause a very large number of duplicates of the Expression field to show up in the color field.
 
 2.0 version updated to add support for parsing fields containing multiple/conjugated words, 
 whether they are inside sentences/fragments or separated by punctuation/symbols, etc. Also adds optional expression field auto-correction to 原形 (citation/dictionary form); accent-dependent colorization to automate [this process](https://www.youtube.com/watch?v=cy7GvwI7uV8&t=4m10s), automatically adding audio files to your cards (note that the default colors are different from the video; see below for how to customize them); and bug fixes. See commits for full details.
