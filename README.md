@@ -24,12 +24,12 @@ Installation:
 1. Make sure you have the [Japanese Support Addon](https://ankiweb.net/shared/info/3918629684) installed already.
 2. Make sure you have the [NHK accent plugin](https://ankiweb.net/shared/info/932119536) installed already.
 3. Open your Anki addons folder by going to Tools -> Add-ons - Open Add-ons Folder in Anki.
-4. Copy the file nhk_pronunciation.py into your addons folder, overwriting the old nhk_pronunciation.py file.
+4. Copy the files nhk_pronunciation.py and nhk_pronunciation_config.json into your addons folder, overwriting the old nhk_pronunciation.py file and (possibly) the old nhk_pronunciation_config.json file.
 5. You need to copy the bs4 folder too if you don't have one. This dependency may by removed in the future, but for now you need it.
-6. Open Anki and go to addons -> nhk_pronunciation -> Edit and set the variables below to your liking.
+6. Open your Anki addons folder again as in step 3 and open nhk_pronunciation_config.json in a text editor, and then edit and set the variables below to your liking (don't forget to save).
 
 Usage:
-So that users don't have to redo their settings every time the addon is updated (the frequency of which will hopefully decrease soon), and because the number of settings has been growing, configuration can now be found in the nhk_pronunciation_config.json file. Additional comments on configuration can still be found at the top of the nhk_pronunciation.py file. When you adjust the settings in the config file, boolean values must be lowercase, you must have commas between different variables, and strings must be surrounded by double quotes (").
+So that users don't have to redo their settings every time the addon is updated (the frequency of which will hopefully decrease soon), and because the number of settings has been growing, configuration can now be found in the nhk_pronunciation_config.json file. Additional comments on configuration can still be found at the top of the nhk_pronunciation.py file. When you adjust the settings in the config file, boolean values must be lowercase, you must have commas between different variables, and strings must be surrounded by double quotes ("").
 
 Modify the following variables in the file to get different functionalities. Functionality was designed to be intuitive, but back up your files (and don't forget about the undo buttons) before adding in bulk. You can undo a bulk addition, but to be safe I recommend trying out different options with a single card at first. If you are confused, example default values can be found in the nhk_pronunciation.py file.
 
