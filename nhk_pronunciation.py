@@ -4,6 +4,8 @@ from collections import namedtuple, OrderedDict
 import re
 import codecs
 import os
+import io
+import json
 from os import listdir
 from os.path import isfile, join, isdir
 import cPickle
@@ -28,41 +30,56 @@ from anki.utils import stripHTML, isWin, isMac
 #                User Options                    *
 # ************************************************
 
+dir_path = os.path.dirname(os.path.normpath(__file__))
+if sys.version_info.major == 2:
+    import json
+    config = json.load(io.open(os.path.join(dir_path, 'nhk_pronunciation_config.json'), 'r'))
+else:
+    raise Exception("This version only supports Anki 2.0; please use the 2.1 version: https://ankiweb.net/shared/info/932119536")
+"""
+EDIT SETTINGS IN nhk_pronunciation_config.json
+THIS COMMENT IS ONLY HERE FOR EXPLANATION
+
+
 # Style mappings (edit this if you want different colors etc.):
-styles = {'class="overline"': 'style="text-decoration:overline;"',
+config["styles"] = {'class="overline"': 'style="text-decoration:overline;"',
           'class="nopron"':   'style="color: royalblue;"',
           'class="nasal"':    'style="color: red;"',
           '&#42780;': '&#42780;'}
 
 # Expression, Reading and Pronunciation fields (edit if the names of your fields are different)
-srcFields = ['Expression']    
-dstFields = ['Pronunciation']
-sndFields = ['Audio']
-colorFields = ['Reading']
-color_sentence = True #set to True if colorFields often contains a sentence...otherwise don't
-#set readings to True if you use brackets to indicate readings; 
+config["srcFields"] = ['Expression']    
+config["dstFields"] = ['Pronunciation']
+config["sndFields"] = ['Audio']
+config["colorFields"] = ['Expression']
+config["is_sentence"] = False #set to True if your Expression is a sentence
+config["color_sentence"] = False #set to True if config["colorFields"] often contains a sentence...otherwise don't
+#set config["readings"] to True if you use brackets to indicate config["readings"]; 
 #otherwise brackets that break up words will cause those words to not be colored
-readings = True #if True, will preserve readings to the colored field. TURN OFF IF NOT COLORING A READINGS FIELD
-unaccented_color = 'green'
-head_color = 'red'
-tail_color = 'orange'
-mid_color = 'blue'
+config["readings"] = False #if True, will preserve config["readings"] to the colored field. TURN OFF IF NOT COLORING A config["readings"] FIELD
+config["unaccented_color"] = 'green'
+config["head_color"] = 'red'
+config["tail_color"] = 'orange'
+config["mid_color"] = 'blue'
 
-# Replace expression with citation forms of relevant terms as appropriate (Default: False)
-modify_expressions = False
+# Extend expression with citation forms of relevant terms as appropriate (Default: False)
+config["extend_expressions"] = True
+# Replace expression with 原形 according to Mecab (overrides config["extend_expressions"])
+# Use only if you trust Mecab to not split words too much, or if you really need the 原形
+config["correct_expressions"] = True
 
 #delimiter to use between each word in a corrected expression (Default: '・')
-modification_delimiter = '・' # only used if modify_expressions is True
+config["modification_delimiter"] = '・' # only used if config["extend_expressions"] is True
 
 # Regenerate pronunciations even if they already exist?
-regenerate_prons = True
+config["regenerate_prons"] = True
 
-global add_sound
-add_sound = True #set to true if you want to add audio to your cards
+global config["add_sound"]
+config["add_sound"] = True #set to true if you want to add audio to your cards
 
-# Use hiragana instead of katakana for readings?
-pronunciation_hiragana = False
-
+# Use hiragana instead of katakana for config["readings"]?
+config["pronunciation_hiragana"] = False
+"""
 # ************************************************
 #                Global Variables                *
 # ************************************************
@@ -76,7 +93,7 @@ soundFolder = u'D:/Dropbox (Personal)/Japan/Pronunciation/NHKOjadAccentsJson/NHK
 soundDict = {}
 soundFiles = []
 media_folder = os.pardir + os.sep + os.pardir + os.sep + "User 1" + os.sep + "collection.media"
-if add_sound and isdir(soundFolder):
+if config["add_sound"] and isdir(soundFolder):
     soundFiles = [f for f in listdir(soundFolder)]# if isfile(join(soundFolder, f))]
     for sound in soundFiles:
         if '.yomi' in sound:
@@ -276,7 +293,7 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
         if not new_prons: new_prons = lookup_func(replace_dup(src))
         if new_prons:
             #choose only the first prons when assigning color to the word
-            src_for_colorization = original_reader.reading(src) if readings else src
+            src_for_colorization = original_reader.reading(src) if config["readings"] else src
             if isinstance(new_prons,list): colorized_words.append(add_color(src_for_colorization, new_prons[0]))
             #It can be either a list or a string, I guess
             prons.extend(new_prons) if isinstance(new_prons,list) else prons.append(new_prons)
@@ -303,7 +320,7 @@ def multi_lookup_helper(srcTxt_all, lookup_func):
                 continue
     
     if srcTxt_all and count == len(srcTxt_all): all_hit = True
-    
+
     return colorized_words, sounds, prons, all_hit
 
 
@@ -339,16 +356,16 @@ def add_color(word, pron):
         #then it has an accent (i.e. a downstep symbol)
         if len(re.sub(non_mora_zi, r'',raw_pron).split("ꜜ")[0]) == 1:
             #then it's 頭高型 or single-mora
-            c_word = '<font color="' + head_color + '">' + word + '</font>'
+            c_word = '<font color="' + config["head_color"] + '">' + word + '</font>'
         elif len(raw_pron) != len(raw_pron.rstrip("ꜜ")):
             #then it's 尾高　[tail]
-            c_word = '<font color="' + tail_color + '">' + word + '</font>'
+            c_word = '<font color="' + config["tail_color"] + '">' + word + '</font>'
         else:
             #then it's 中高　[middle]
-            c_word = '<font color="' + mid_color + '">' + word + '</font>'
+            c_word = '<font color="' + config["mid_color"] + '">' + word + '</font>'
     else:
         #it's unaccented (平板)
-        c_word = '<font color="' + unaccented_color + '">' + word + '</font>'
+        c_word = '<font color="' + config["unaccented_color"] + '">' + word + '</font>'
     
     return c_word
 
@@ -370,15 +387,16 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     or other punctuation, gets the pronunciation for each word. 
     2) Parses words with Mecab if a simple split doesn't work
     3) adds color to the original expression and/or replaces it with citation forms"""
-    do_colorize = False
-    is_sentence = False # set to True if probably a sentence, to avoid modifying it
-    #if colorFields:
-    #    if not modify_expressions:
-    #        raise Exception("Please set modify_expressions to True for auto-colorize to work")
+    #do_colorize = False
+
+    #config["is_sentence"] = False # set to True if probably a sentence, to avoid modifying it
+    #if config["colorFields"]:
+    #    if not config["extend_expressions"]:
+    #        raise Exception("Please set config["extend_expressions"] to True for auto-colorize to work")
     #    else: do_colorize = True
 
     prons, colorized_words, srcTxt_all = [], [], []
-    src = re.sub(r"\s?([^[\]]*)\[[^[\]]*\]", r"\1", src) #for removing brackets that hurigana readings insert
+    src = re.sub(r"\s?([^[\]]*)\[[^[\]]*\]", r"\1", src) #for removing brackets that hurigana config["readings"] insert
     srcTxt_all = japanese_splitter(src)
 
     #__, _, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
@@ -393,14 +411,27 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
 
     #parse with mecab and add new terms to the entries to look up
     srcTxt_2 = reading_parser(reader.reading(soup_maker(new_src)))
-    srcTxt_all.extend([term for term in srcTxt_2 if term not in srcTxt_all])
+    if config["correct_expressions"]:
+        srcTxt_all = srcTxt_2
+    else:
+        srcTxt_all.extend([term for term in srcTxt_2 if term not in srcTxt_all])
     
     colorized_words, sounds, prons, all_hit = multi_lookup_helper(srcTxt_all, lookup_func)
     
     #if you couldn't split the words perfectly with a simple split, use mecab
     #or just use it anyway
-    if not all_hit: is_sentence = True
-    #if len(srcTxt_all) == 1 and not prons: is_sentence = True
+    #if not all_hit: config["is_sentence"] = True
+    if len(srcTxt_all) == 1 and not prons: config["is_sentence"] = True
+    
+    #TODO: improve sentence detection...by default assume it's not sentence?
+    #case 1: original text is a conjugated word; mecab returns that + base form
+    #case 2: original text is in base form; mecab returns that and len = 1
+    #case 3: there are multiple conjugated separated by delimiters...mecab
+    #results yield original + base * 2. 
+    #case 4: there are multiple phrases separated by delimiters: ...?
+    
+    #in which case...if after filtering the original srcTxt_all from the mecab
+    #stuff...you're left with
     
     #removed duplicates while preserving order 
     #(can be caused by sentences, multiple forms of the same word, etc)
@@ -412,10 +443,18 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
     fields_dest = separator.join(prons)
     
     #determine what/how to return/replace expressions based on the set config 
-    delim = modification_delimiter if modify_expressions else '・'
-    final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
-    if colorFields and colorTxt:
-        if color_sentence or (is_sentence and colorFields == srcFields):
+    delim = config["modification_delimiter"] if config["extend_expressions"] or config["correct_expressions"] else '・'
+    if config["correct_expressions"] and not config["is_sentence"]:
+        final_src = delim.join(srcTxt_2)
+    elif config["extend_expressions"] and not config["is_sentence"]:
+        final_src = delim.join(srcTxt_all)
+    else:
+        final_src = src
+
+    if config["colorFields"] and colorTxt:
+        if config["colorFields"] == config["srcFields"]:
+            colorTxt = final_src
+        if config["color_sentence"]:
             #uncommenting the below ling avoids the 重なるhtml tags problem at the risk of deleting unrelated html
             colorTxt = re.sub(re.escape('&nbsp;'),'', colorTxt)
             colorTxt = soup_maker(colorTxt) 
@@ -448,6 +487,7 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
                     current_loc = start+length
                 temp += re.sub(r'\s?'+re.escape(soup_maker(word)), re.sub(r'([\>\]])\s','\g<1>',word), colorTxt[current_loc:])
                 colorTxt = temp
+                if count >20: raise Exception(colorTxt)
                 count += 1
                 #then add the older font-tagged-text back based on its original index
                 #colorTxt = re.sub(r'\s?'+re.escape(soup_maker(word)), re.sub(r'([\>\]])\s','\g<1>',word), colorTxt)
@@ -455,16 +495,16 @@ def multi_lookup(src, lookup_func, colorTxt = None, separator = "  ***  "):
         else:
             #adds dictionary forms of words to field even if it was already colorized
             if prons and colorized_words: colorTxt = delim.join(colorized_words) 
-    if colorFields == srcFields:
+    if config["colorFields"] == config["srcFields"]:
         final_src = colorTxt
     #else:
-    #    final_src = delim.join(srcTxt_all) if modify_expressions and not is_sentence else src
+    #    final_src = delim.join(srcTxt_all) if config["extend_expressions"] and not config["is_sentence"] else src
     final_color_src = colorTxt    
     #NOTE: colorized_words will only have the words that have prons, and
     #will have them in the form that was able to get a hit, i.e. citation/dictionary form
 
     if sounds:
-        final_snd = sounds[0]
+        final_snd = sounds
     else:
         final_snd = ''
     
@@ -597,8 +637,8 @@ def read_derivative():
 def inline_style(txt):
     """ Map style classes to their inline version """
 
-    for key in styles.iterkeys():
-        txt = txt.replace(key, styles[key])
+    for key in config["styles"].iterkeys():
+        txt = txt.replace(key, config["styles"][key])
 
     return txt
 
@@ -610,7 +650,7 @@ def getPronunciations(expr):
         for kana, pron in thedict[expr]:
             inlinepron = inline_style(pron)
 
-            if pronunciation_hiragana:
+            if config["pronunciation_hiragana"]:
                 inlinepron = katakana_to_hiragana(inlinepron)
 
             if inlinepron not in ret:
@@ -692,25 +732,25 @@ def get_src_dst_fields(fields):
     color = None
     colorIdx = None
 
-    for i, f in enumerate(srcFields):
+    for i, f in enumerate(config["srcFields"]):
         if f in fields:
             src = f
             srcIdx = i
             break
 
-    for i, f in enumerate(dstFields):
+    for i, f in enumerate(config["dstFields"]):
         if f in fields:
             dst = f
             dstIdx = i
             break
             
-    for i, f in enumerate(sndFields):
+    for i, f in enumerate(config["sndFields"]):
         if f in fields:
             snd = f
             sndIdx = i
             break
             
-    for i, f in enumerate(colorFields):
+    for i, f in enumerate(config["colorFields"]):
         if f in fields:
             color = f
             colorIdx = i
@@ -719,11 +759,13 @@ def get_src_dst_fields(fields):
     return src, srcIdx, dst, dstIdx, snd, sndIdx, color, colorIdx
 
 def add_audio(audio):
-    if add_sound and audio:
-        if not isfile(join(media_folder, audio)):
-            copy(soundFolder + os.sep + audio, media_folder + os.sep + audio)
-        return "[sound:" + audio + "]"
-    
+    sounds = []
+    if config["add_sound"] and audio:
+        for sound in audio:
+            if not isfile(media_folder + os.sep + sound):
+                copy(soundFolder + os.sep + sound, media_folder + os.sep + sound)
+            sounds.append("[sound:" + sound + "]")
+        return ''.join(sounds)
 
 def add_pronunciation_once(fields, model, data, n):
     """ When possible, temporarily set the pronunciation to a field """
@@ -800,7 +842,7 @@ def regeneratePronunciations(nids):
         if not src or dst is None:
             continue
 
-        if note[dst] and not regenerate_prons:
+        if note[dst] and not config["regenerate_prons"]:
             # already contains data, skip
             continue
 
