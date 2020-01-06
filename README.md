@@ -1,4 +1,6 @@
 # nhk-pronunciation
+NOTE: This addon is no longer supported because a much better addon has been released for Anki, which you can download [here](https://ankiweb.net/shared/info/278530045) (only supports Anki 2.1). The new addon took inspiration from this addon (including apparently some source code at first but I don't think it has any of it now), and I spoke with the developer some throughought its creation in order to vet it. I highly recommend using that instead.
+
 Anki2 Add-On to look-up the pronunciation of Japanese expressions. THIS VERSION ONLY WORKS WITH ANKI 2.0.
 
 Always back up your decks and test on a couple cards before bulk adding. KNOWN BUGS (will delete this message when it's fixed): 1:  conjugated words in sentences, and words that can be interpreted in multiple ways (e.g. 確かめる can be viewed by the program as 確か+める) may cause junk text to be written to your destination field. 2: Spaces before words with hurigana are removed even when color hasn't been added. 3: Parentheses in your color field can cause a memory error.
